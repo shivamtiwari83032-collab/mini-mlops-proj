@@ -9,8 +9,8 @@ import logging
 import mlflow
 import mlflow.sklearn
 import dagshub
-import shutil
 import os
+import shutil
 
 # Set up DagsHub credentials for MLflow tracking
 dagshub_token = os.getenv("DAGSHUB_PAT")
@@ -116,6 +116,10 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
         raise
 
 def main():
+    # Cleanup previous failed attempts to avoid "Path already exists" errors
+    for temp_path in ['model', 'temp_model_dir', 'temp_model_files']:
+        if os.path.exists(temp_path):
+            shutil.rmtree(temp_path)
     mlflow.set_experiment("dvc-pipeline")
     with mlflow.start_run() as run:  # Start an MLflow run
         try:
@@ -140,49 +144,26 @@ def main():
                     mlflow.log_param(param_name, param_value)
             
             # Log model to MLflow
-            model_dir = "temp_model_dir"
-            # 🔥 If it's a file → remove it
-            if os.path.isfile(model_dir):
-                os.remove(model_dir)
-
-            # 🔥 If it's a directory → remove it completely
-            elif os.path.isdir(model_dir):
-                shutil.rmtree(model_dir)
-
-            # Now safely create fresh directory
-            os.makedirs(model_dir)
-            # 🧠 Why this works
-            # Save the model locally so we can "push" the whole folder
-            print("Saving model locally...")
-            mlflow.sklearn.save_model(clf, model_dir)
-
-            try:
-                print("Uploading model folder to Artifacts...")
-               # This command forces the folder to appear in the sidebar
-                mlflow.log_artifacts(model_dir, artifact_path="Model")
-        
-                # This registers it in the Models tab as you did before
-                mlflow.sklearn.log_model(clf, artifact_path="model")
-        
-                print("✅ SUCCESS: Folder and Model registered!")
-            except Exception as e:
-                print(f"❌ Upload failed: {e}")
+            mlflow.sklearn.log_model(clf, "trained_model")
             
             
-            # Save model info
-            save_model_info(run.info.run_id, "model", 'reports/experiment_info.json')
+            
+            # Save model info (Ensure this name matches the log_artifact call)
+            model_info_path = 'reports/experiment_info.json'
+            save_model_info(run.info.run_id, "model", model_info_path)
             
             # Log the metrics file to MLflow
             mlflow.log_artifact('reports/metrics.json')
 
-            # Log the model info file to MLflow
-            mlflow.log_artifact('reports/experiment_info.json')
+            # FIX: Use the correct variable/filename here
+            mlflow.log_artifact(model_info_path)
 
             # Log the evaluation errors log file to MLflow
-            mlflow.log_artifact('model_evaluation_errors.log')
+            if os.path.exists('model_evaluation_errors.log'):
+                mlflow.log_artifact('model_evaluation_errors.log')
+                
         except Exception as e:
             logger.error('Failed to complete the model evaluation process: %s', e)
-            print(f"Error: {e}")
 
 if __name__ == '__main__':
     main()
