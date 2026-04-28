@@ -9,11 +9,11 @@ stages:
       size: 3545
     params:
       params.yaml:
-        data_ingestion.test_size: 0.31
+        data_ingestion.test_size: 0.21
     outs:
     - path: data/raw
       hash: md5
-      md5: 02061fd1a8157be881cc34a169d14a45.dir
+      md5: 12ab41edc14fc89684a832610be41981.dir
       size: 827973
       nfiles: 2
   data_preprocessing:
@@ -21,7 +21,7 @@ stages:
     deps:
     - path: data/raw
       hash: md5
-      md5: 02061fd1a8157be881cc34a169d14a45.dir
+      md5: 12ab41edc14fc89684a832610be41981.dir
       size: 827973
       nfiles: 2
     - path: src/data/data_preprocessing.py
@@ -31,7 +31,7 @@ stages:
     outs:
     - path: data/interim
       hash: md5
-      md5: 49ba28d2f3c9e6d482cb002a242452ee.dir
+      md5: 6ac1aab9b4d2cbc16bb3018efa572c0f.dir
       size: 566210
       nfiles: 2
   feature_engineering:
@@ -39,7 +39,7 @@ stages:
     deps:
     - path: data/interim
       hash: md5
-      md5: 49ba28d2f3c9e6d482cb002a242452ee.dir
+      md5: 6ac1aab9b4d2cbc16bb3018efa572c0f.dir
       size: 566210
       nfiles: 2
     - path: src/features/feature_engineering.py
@@ -48,24 +48,24 @@ stages:
       size: 3883
     params:
       params.yaml:
-        feature_engineering.max_features: 5110
+        feature_engineering.max_features: 5115
     outs:
     - path: data/processed
       hash: md5
-      md5: 210baa9a7d5b1892ed7ef5133f61c463.dir
-      size: 106102296
+      md5: 0e6e7e3646e3860026f48818269c4043.dir
+      size: 106206086
       nfiles: 2
     - path: models/vectorizer.pkl
       hash: md5
-      md5: 744c115536892a835056414defa216a0
-      size: 144095
+      md5: 77a3f29da65c526c78fa69cfd46fe42f
+      size: 143492
   model_building:
     cmd: python src/model/model_building.py
     deps:
     - path: data/processed
       hash: md5
-      md5: 210baa9a7d5b1892ed7ef5133f61c463.dir
-      size: 106102296
+      md5: 0e6e7e3646e3860026f48818269c4043.dir
+      size: 106206086
       nfiles: 2
     - path: src/model/model_building.py
       hash: md5
@@ -74,36 +74,47 @@ stages:
     outs:
     - path: models/model.pkl
       hash: md5
-      md5: 525453c04689facf6af30b78982cb23f
-      size: 41597
-  model_evaluation:
-    cmd: python src/model/model_evaluation.py
-    deps:
-    - path: models/model.pkl
-      hash: md5
-      md5: 525453c04689facf6af30b78982cb23f
-      size: 41597
-    - path: src/model/model_evaluation.py
-      hash: md5
-      md5: f5748c6f2a2c880ee52ba8cd7b925bfc
-      size: 6083
-    outs:
-    - path: reports/experiment_info.json
-      hash: md5
-      md5: 0d42ed9d67754d979b27f7b262c23c32
-      size: 82
-    - path: reports/metrics.json
-      hash: md5
-      md5: c20022e097d5aa598c1f5515170be4c8
-      size: 145
+      md5: 85ace9f2259073f45840f03ae357387a
+      size: 41637
   model_registration:
     cmd: python src/model/register_model.py
     deps:
     - path: reports/experiment_info.json
       hash: md5
-      md5: b525a5c23d1ff9e8cdf91ff30f18c356
+      md5: 833bffe234041c4d2661cdd7dd229c42
       size: 82
     - path: src/model/register_model.py
       hash: md5
-      md5: 8601e171bcbcb5e5f97480fb7ee277c8
-      size: 3051
+      md5: 4be584245ba4d36cf3a19526b3cba3d1
+      size: 2888
+  register_model:
+    cmd: python src/model/register_model.py
+    deps:
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: 8d436ad4e4017cdd89c12f1278f50573
+      size: 82
+    - path: src/model/register_model.py
+      hash: md5
+      md5: 4d9ac4090a6c47b565277ddba72e2484
+      size: 3075
+  model_evaluation:
+    cmd: python src/model/model_evaluation.py
+    deps:
+    - path: models/model.pkl
+      hash: md5
+      md5: 85ace9f2259073f45840f03ae357387a
+      size: 41637
+    - path: src/model/model_evaluation.py
+      hash: md5
+      md5: bdd16f8a03b412befda372b382b380b3
+      size: 6427
+    outs:
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: 833bffe234041c4d2661cdd7dd229c42
+      size: 82
+    - path: reports/metrics.json
+      hash: md5
+      md5: f1e98ee97f7bcc98db9b1c8fbf121684
+      size: 145

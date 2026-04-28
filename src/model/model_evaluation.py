@@ -10,7 +10,6 @@ import mlflow
 import mlflow.sklearn
 import dagshub
 import os
-import shutil
 
 # Set up DagsHub credentials for MLflow tracking
 dagshub_token = os.getenv("DAGSHUB_PAT")
@@ -115,55 +114,65 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
         logger.error('Error occurred while saving the model info: %s', e)
         raise
 
+import shutil  # Add this at the top with your other imports
+
 def main():
-    # Cleanup previous failed attempts to avoid "Path already exists" errors
-    for temp_path in ['model', 'temp_model_dir', 'temp_model_files']:
-        if os.path.exists(temp_path):
-            shutil.rmtree(temp_path)
     mlflow.set_experiment("dvc-pipeline")
-    with mlflow.start_run() as run:  # Start an MLflow run
+    with mlflow.start_run() as run:
         try:
+            # 1. Load your local model and data
             clf = load_model('./models/model.pkl')
             test_data = load_data('./data/processed/test_bow.csv')
             
             X_test = test_data.iloc[:, :-1].values
             y_test = test_data.iloc[:, -1].values
 
+            # 2. Evaluation
             metrics = evaluate_model(clf, X_test, y_test)
-            
             save_metrics(metrics, 'reports/metrics.json')
             
-            # Log metrics to MLflow
+            # 3. Log Metrics & Params
             for metric_name, metric_value in metrics.items():
                 mlflow.log_metric(metric_name, metric_value)
             
-            # Log model parameters to MLflow
             if hasattr(clf, 'get_params'):
                 params = clf.get_params()
                 for param_name, param_value in params.items():
                     mlflow.log_param(param_name, param_value)
             
-            # Log model to MLflow
-            mlflow.sklearn.log_model(clf, "trained_model")
+            # --- THE FIX: SAVE LOCALLY THEN LOG ---
             
+            local_model_dir = "temp_mlflow_model"
             
+            # Clean up if the directory already exists from a previous failed run
+            if os.path.exists(local_model_dir):
+                shutil.rmtree(local_model_dir)
             
-            # Save model info (Ensure this name matches the log_artifact call)
-            model_info_path = 'reports/experiment_info.json'
-            save_model_info(run.info.run_id, "model", model_info_path)
+            # Save the MLflow model structure to a local folder
+            mlflow.sklearn.save_model(sk_model=clf, path=local_model_dir)
             
-            # Log the metrics file to MLflow
+            # Log that entire folder to the "Artifacts" section
+            # This ensures it appears as a folder named "model" in the UI
+            mlflow.log_artifacts(local_model_dir, artifact_path="model")
+            
+            # Clean up the local temporary folder
+            shutil.rmtree(local_model_dir)
+            
+            # ---------------------------------------
+
+            # 4. Log other report artifacts
+            save_model_info(run.info.run_id, "model", 'reports/experiment_info.json')
             mlflow.log_artifact('reports/metrics.json')
+            mlflow.log_artifact('reports/experiment_info.json')
+            mlflow.log_artifact('model_evaluation_errors.log')
 
-            # FIX: Use the correct variable/filename here
-            mlflow.log_artifact(model_info_path)
+            logger.info("Model and artifacts successfully logged to MLflow.")
 
-            # Log the evaluation errors log file to MLflow
-            if os.path.exists('model_evaluation_errors.log'):
-                mlflow.log_artifact('model_evaluation_errors.log')
-                
         except Exception as e:
             logger.error('Failed to complete the model evaluation process: %s', e)
+            print(f"Error: {e}")
+
+
 
 if __name__ == '__main__':
     main()
