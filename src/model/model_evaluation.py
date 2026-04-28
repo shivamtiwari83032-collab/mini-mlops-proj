@@ -162,7 +162,7 @@ def main():
                 mlflow.log_artifacts(model_dir, artifact_path="Model")
         
                 # This registers it in the Models tab as you did before
-                mlflow.sklearn.log_model(clf, artifact_path="model", registered_model_name="LogisticRegressionevalmodel")
+                mlflow.sklearn.log_model(clf, artifact_path="model")
         
                 print("✅ SUCCESS: Folder and Model registered!")
             except Exception as e:
