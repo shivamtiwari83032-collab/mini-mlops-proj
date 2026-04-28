@@ -94,7 +94,7 @@ def get_latest_model_version(model_name):
     return latest_version[0].version if latest_version else None
 
 model_name = "my_model"
-model_version = 1
+model_version = get_latest_model_version(model_name)
 
 model_uri = f'models:/{model_name}/{model_version}'
 model = mlflow.pyfunc.load_model(model_uri)
@@ -116,15 +116,15 @@ def predict():
     # bow
     features = vectorizer.transform([text])
 
-    # # Convert sparse matrix to DataFrame
-    # features_df = pd.DataFrame.sparse.from_spmatrix(features)
-    # features_df = pd.DataFrame(features.toarray(), columns=[str(i) for i in range(features.shape[1])])
+    # Convert sparse matrix to DataFrame
+    features_df = pd.DataFrame.sparse.from_spmatrix(features)
+    features_df = pd.DataFrame(features.toarray(), columns=[str(i) for i in range(features.shape[1])])
 
     # prediction
-    result = model.predict(features)
+    result = model.predict(features_df)
 
     # show
-    return str(result[0])   
+    return render_template('index.html', result=result[0])
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
