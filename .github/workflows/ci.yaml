@@ -76,6 +76,7 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/emotion2:latest
 
+
       - name: Deploy to EC2
         if: success()
         uses: appleboy/ssh-action@v0.1.7
