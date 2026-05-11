@@ -94,9 +94,11 @@ jobs:
               ${{ secrets.DOCKER_HUB_USERNAME }}/emotion2:latest
       - name: login in to aws ecr
         run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_ECR}}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_ECR}}
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 781288679048.dkr.ecr.eu-north-1.amazonaws.com
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region eu-north-1
+
+          aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 781288679048.dkr.ecr.eu-north-1.amazonaws.com
       - name: build docker image for aws ecr
         run: |
           docker build -t mini-mlops-proj-shivam-ecr .
