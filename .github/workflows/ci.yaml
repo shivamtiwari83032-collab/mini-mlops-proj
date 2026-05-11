@@ -99,13 +99,13 @@ jobs:
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 781288679048.dkr.ecr.us-east-1.amazonaws.com
       - name: build docker image for aws ecr
         run: |
-          docker build -t mini-mlops-proj-shivam-ecr
+          docker build -t mini-mlops-proj-shivam-ecr .
 
       - name: tag docker image 
         run: |
           docker tag mini-mlops-proj-shivam-ecr:latest 781288679048.dkr.ecr.us-east-1.amazonaws.com/mini-mlops-proj-shivam-ecr:latest
 
-      - name: push docker image to aws ecr .
+      - name: push docker image to aws ecr
         run: |
           docker push 781288679048.dkr.ecr.us-east-1.amazonaws.com/mini-mlops-proj-shivam-ecr:latest
             
